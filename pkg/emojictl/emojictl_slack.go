@@ -227,7 +227,7 @@ func (s *SlackEmojictl) RemoveEmoji(ctx context.Context, e *Emoji) error {
 			ContentType: MakeMultiPartContentTypeHeaderValue(bound),
 		}.ToMapStringSliceString()),
 		Path: "/api/emoji.remove",
-		Body: io.NopCloser(body),
+		Body: ioutil.NopCloser(body),
 	})
 	if err != nil {
 		return err
