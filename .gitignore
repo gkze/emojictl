@@ -20,3 +20,5 @@
 /vendor/
 /Godeps/
 
+# Build artifacts
+dist/
