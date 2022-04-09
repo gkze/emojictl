@@ -47,8 +47,9 @@ const (
 
 // All supported HTTP headers in this project
 type HTTPHeaders struct {
-	ContentType        string `header:"Content-Type"`
 	ContentDisposition string `header:"Content-Disposition"`
+	ContentType        string `header:"Content-Type"`
+	Cookie             string `header:"Cookie"`
 }
 
 // ToMapStringSliceString is a helper to make HTTPHeaders compatible with

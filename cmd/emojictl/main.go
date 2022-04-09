@@ -13,7 +13,11 @@ import (
 )
 
 func main() {
-	sec, err := emojictl.NewSlackEmojictl(os.Getenv("SLACK_TOKEN"))
+	sec, err := emojictl.NewSlackEmojictl(
+		os.Getenv("SLACK_WORKSPACE"),
+		os.Getenv("SLACK_HEADER_TOKEN"),
+		os.Getenv("SLACK_BODY_TOKEN"),
+	)
 	if err != nil {
 		panic(err)
 	}

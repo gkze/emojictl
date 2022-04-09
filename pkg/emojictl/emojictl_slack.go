@@ -50,12 +50,12 @@ func (s *slackHTTPResponse) JSON() (map[string]interface{}, error) {
 }
 
 type slackHTTPClient struct {
-	httpClient http.Client
-	token      string
+	httpClient                        http.Client
+	headerToken, bodyToken, workspace string
 }
 
 func (s *slackHTTPClient) defaultMultipartBody() MultipartBody {
-	return MultipartBody(map[string]string{"token": s.token})
+	return MultipartBody(map[string]string{"token": s.bodyToken})
 }
 
 func (s *slackHTTPClient) Do(req *slackHTTPRequest) (*slackHTTPResponse, error) {
@@ -67,18 +67,29 @@ func (s *slackHTTPClient) Do(req *slackHTTPRequest) (*slackHTTPResponse, error) 
 	res, err := s.httpClient.Do(func() *http.Request {
 		return &http.Request{
 			Method: string(req.Method),
-			URL:    &url.URL{Scheme: "https", Host: slackHost, Path: req.Path},
+			URL: &url.URL{
+				Scheme: "https",
+				Host:   fmt.Sprintf("%s.%s", s.workspace, slackHost),
+				Path:   req.Path,
+			},
 			Header: func() http.Header {
-				multipartContentTypeHeader := MakeMultiPartContentTypeHeaderValue(boundary)
+				multipartContentTypeHeader := MakeMultiPartContentTypeHeaderValue(
+					boundary,
+				)
 
 				if req.Headers == nil {
 					return HTTPHeaders{
 						ContentType: multipartContentTypeHeader,
+						Cookie: fmt.Sprintf(
+							"d=%s", url.QueryEscape(s.headerToken),
+						),
 					}.ToMapStringSliceString()
 				}
 
 				if _, ok := req.Headers[string(ContentType)]; !ok {
-					req.Headers.Set(string(ContentType), multipartContentTypeHeader)
+					req.Headers.Set(
+						string(ContentType), multipartContentTypeHeader,
+					)
 				}
 
 				return req.Headers
@@ -101,13 +112,16 @@ type SlackEmojictl struct {
 	slackHTTPClient *slackHTTPClient
 }
 
-func NewSlackEmojictl(token string) (*SlackEmojictl, error) {
+func NewSlackEmojictl(workspace, headerToken, bodyToken string) (*SlackEmojictl, error) {
 	return &SlackEmojictl{
-		slack.New(token), &slackHTTPClient{*http.DefaultClient, token},
+		slack.New(headerToken),
+		&slackHTTPClient{*http.DefaultClient, headerToken, bodyToken, workspace},
 	}, nil
 }
 
-func (s *SlackEmojictl) makeEmojiMultipartBody(e *Emoji) (string, io.ReadCloser, error) {
+func (s *SlackEmojictl) makeEmojiMultipartBody(e *Emoji) (
+	string, io.ReadCloser, error,
+) {
 	eBytes, err := e.Get()
 	if err != nil {
 		return "", nil, err
@@ -120,7 +134,7 @@ func (s *SlackEmojictl) makeEmojiMultipartBody(e *Emoji) (string, io.ReadCloser,
 	for k, v := range map[string]string{
 		"mode":  "data",
 		"name":  e.Name,
-		"token": s.slackHTTPClient.token,
+		"token": s.slackHTTPClient.bodyToken,
 	} {
 		if err := mpWriter.WriteField(k, v); err != nil {
 			return "", nil, err
@@ -128,8 +142,10 @@ func (s *SlackEmojictl) makeEmojiMultipartBody(e *Emoji) (string, io.ReadCloser,
 	}
 
 	imageBody, err := mpWriter.CreatePart(textproto.MIMEHeader(HTTPHeaders{
-		ContentDisposition: fmt.Sprintf("form-data; name=image; filename=\"%s\"", fName),
-		ContentType:        mimetype.Detect(eBytes).String(),
+		ContentDisposition: fmt.Sprintf(
+			"form-data; name=image; filename=\"%s\"", fName,
+		),
+		ContentType: mimetype.Detect(eBytes).String(),
 	}.ToMapStringSliceString()))
 	if err != nil {
 		return "", nil, err
@@ -157,6 +173,10 @@ func (s *SlackEmojictl) ListEmojis(ctx context.Context) ([]*Emoji, error) {
 	resJSON, err := res.JSON()
 	if err != nil {
 		return nil, err
+	}
+
+	if resJSON["ok"] == false {
+		return nil, fmt.Errorf("encountered Slack API error: %+v", resJSON["error"])
 	}
 
 	emojis := []*Emoji{}
@@ -214,7 +234,7 @@ func (s *SlackEmojictl) AddEmoji(ctx context.Context, e *Emoji) error {
 func (s *SlackEmojictl) RemoveEmoji(ctx context.Context, e *Emoji) error {
 	bound, body, err := MultipartBody(map[string]string{
 		"name":  e.Name,
-		"token": s.slackHTTPClient.token,
+		"token": s.slackHTTPClient.bodyToken,
 	}).Render()
 	if err != nil {
 		return err
@@ -245,7 +265,7 @@ func (s *SlackEmojictl) AliasEmoji(ctx context.Context, src, dest string) error 
 		"mode":      "alias",
 		"name":      src,
 		"alias_for": fmt.Sprintf(":%s:", dest),
-		"token":     s.slackHTTPClient.token,
+		"token":     s.slackHTTPClient.bodyToken,
 	}).Render()
 	if err != nil {
 		return err

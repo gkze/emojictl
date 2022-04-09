@@ -22,3 +22,6 @@
 
 # Build artifacts
 dist/
+
+# Local environment variables
+.env
