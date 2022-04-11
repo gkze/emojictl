@@ -23,7 +23,7 @@ This project is under active development, so expect it to change a lot & quickly
 
 ### Install
 
-Stars is available via three channels:
+`emojictl` is available via three channels:
 
 * **Homebrew**
 
