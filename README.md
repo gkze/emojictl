@@ -4,8 +4,8 @@
 [![GoReport Widget]][GoReport Status]
 [![GoDocWidget]][GoDocReference]
 
-[Actions Test Workflow Status]: https://github.com/gkze/emojictl/actions?query=workflow%3Aci
-[Actions Test Workflow Widget]: https://github.com/gkze/emojictl/workflows/ci/badge.svg
+[Actions Test Workflow Status]: https://github.com/gkze/emojictl/actions?query=workflow%3ACI
+[Actions Test Workflow Widget]: https://github.com/gkze/emojictl/workflows/CI/badge.svg
 
 [GoReport Status]: https://goreportcard.com/report/github.com/gkze/emojictl
 [GoReport Widget]: https://goreportcard.com/badge/github.com/gkze/emojictl
