@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/gabriel-vasile/mimetype v1.4.1
-	github.com/slack-go/slack v0.12.1
+	github.com/slack-go/slack v0.12.2
 	github.com/spf13/cobra v1.6.1
 )
 
